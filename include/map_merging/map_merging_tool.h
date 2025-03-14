@@ -6,18 +6,19 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d.hpp>
 
+using namespace std;
 
 class MapMergingTool
 {
     public:
-        MapMergingTool(cv::Ptr<cv::Feature2D> detector, cv::Ptr<cv::DescriptorMatcher> matcher);
+        MapMergingTool(cv::Ptr<cv::Feature2D> detector, cv::Ptr<cv::DescriptorMatcher> matcher, float ratio_thr);
         virtual ~MapMergingTool();
 
-        void detect_features(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
-        void match_features(const cv::Mat& descriptors1, const cv::Mat& descriptors2, std::vector<cv::DMatch>& matches);
-        cv::Mat draw_features(const cv::Mat& image, const std::vector<cv::KeyPoint>& keypoints);
-        cv::Mat draw_matches(const cv::Mat& image1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
-                             const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches);
+        void detect_features(const cv::Mat& image, vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
+        void match_features(const cv::Mat& descriptors1, const cv::Mat& descriptors2, vector<cv::DMatch>& matches);
+        cv::Mat draw_features(const cv::Mat& image, const vector<cv::KeyPoint>& keypoints);
+        cv::Mat draw_matches(const cv::Mat& image1, const vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
+                             const vector<cv::KeyPoint>& keypoints2, const vector<cv::DMatch>& matches);
         /*
         cv::Mat compute_homography(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2, 
                                    const std::vector<cv::DMatch>& matches);
@@ -26,6 +27,7 @@ class MapMergingTool
     private:
         cv::Ptr<cv::Feature2D> detector;
         cv::Ptr<cv::DescriptorMatcher> matcher;
+        float ratio_threshold; 
 };
 
 

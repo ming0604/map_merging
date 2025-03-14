@@ -8,14 +8,16 @@ project(map_merging)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  OpenCV
-  cv_bridge
+  
   nav_msgs
   roscpp
   rospy
   sensor_msgs
   std_msgs
 )
+
+set(OpenCV_DIR /usr/local/lib/cmake/opencv4)
+find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -122,7 +124,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  $(OpenCV_INCLUDE_DIRS)
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -151,14 +153,14 @@ add_library(map_merging_library
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
+
 target_link_libraries(
   map_merging_library
   ${catkin_LIBRARIES}
 )
 
-add_executable(feature_match_test src/feature_match_test.cpp)
-target_link_libraries(feature_match_test ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} map_merging_library) 
-
+add_executable(feature_matching_test src/feature_matching_test.cpp)
+target_link_libraries(feature_matching_test ${catkin_LIBRARIES} ${OpenCV_LIBS} map_merging_library) 
 
 #############
 ## Install ##
@@ -214,3 +216,9 @@ target_link_libraries(feature_match_test ${catkin_LIBRARIES} ${OpenCV_LIBRARIES}
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+#message(STATUS "OpenCV library status:")
+#message(STATUS "    version: ${OpenCV_VERSION}")
+#message(STATUS "    libraries: ${OpenCV_LIBS}")
+#message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
+#message(STATUS "    catkin libraries: ${catkin_LIBRARIES}")

@@ -19,9 +19,12 @@ class MapMergingTool
         cv::Mat draw_features(const cv::Mat& image, const vector<cv::KeyPoint>& keypoints);
         cv::Mat draw_matches(const cv::Mat& image1, const vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
                              const vector<cv::KeyPoint>& keypoints2, const vector<cv::DMatch>& matches);
+
+        cv::Mat compute_affine_matrix(const vector<cv::KeyPoint>& keypoints1, const vector<cv::KeyPoint>& keypoints2, 
+                                        const vector<cv::DMatch>& matches, cv::Mat& inliers);
+        cv::Mat draw_inlier_matches(const cv::Mat& image1, const vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
+                                    const vector<cv::KeyPoint>& keypoints2, const vector<cv::DMatch>& matches, const cv::Mat& inliers);
         /*
-        cv::Mat compute_homography(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2, 
-                                   const std::vector<cv::DMatch>& matches);
         cv::Mat merge_maps(const cv::Mat& map1, const cv::Mat& map2, const cv::Mat& H, const double origin1[3], double resolution, double outOrigin[3]);
         */
     private:

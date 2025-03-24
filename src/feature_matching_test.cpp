@@ -48,7 +48,7 @@ int main(int argc, char** argv)
     // Print the names of the input maps
     cout << "Map1: " << map1_file_name << endl;
     cout << "Map2: " << map2_file_name << endl;
- 
+    
 
     // Create the feature detector and BFMatcher
     cv::Ptr<cv::Feature2D> detector;
@@ -109,6 +109,7 @@ int main(int argc, char** argv)
     cv::imwrite(map1_with_features_path, map1_with_features);
     cv::imwrite(map2_with_features_path, map2_with_features);
     cout << "Saved images with features to " << save_dir << endl;
+
     */
     // Perform feature matching
     vector<cv::DMatch> matches;
@@ -118,8 +119,8 @@ int main(int argc, char** argv)
     // Draw the matching results (here all matches are drawn; you can modify to show only the top N matches if needed)
     cv::Mat match_img = tool.draw_matches(map1, kp1, map2, kp2, matches);
     cv::imshow("Match Result", match_img);
+
     /*
-    
     // Save the matching result image
     //string match_img_path = save_dir + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_matches_crosscheck.png";
     //string match_img_path = save_dir + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_matches_no_crosscheck.png";
@@ -127,15 +128,55 @@ int main(int argc, char** argv)
     cv::imwrite(match_img_path, match_img);
     cout << "Saved matching result image to " << save_dir << endl;
     */
+
+    // Compute the affine transformation matrix
+    cv::Mat inliers;
+    cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers);
+    // Draw the inlier matches
+    cv::Mat inlier_img = tool.draw_inlier_matches(map1, kp1, map2, kp2, matches, inliers);
+    cv::imshow("Inlier Matches", inlier_img);
+
+    /*
+    // Save the inlier matches image
+    string inlier_img_path = save_dir + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_inlier_matches_.png";
+    cv::imwrite(inlier_img_path, inlier_img);
+    */
+
+    // Draw the warped map2 using the computed affine matrix
+    cv::Mat warped_map2;
+    cv::warpAffine(map2, warped_map2, affine, map1.size(),
+                   cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255));
+    cv::imshow("Warped Map2", warped_map2);
+    // Use map1 as the base map, see how well map2 is overlaid on map1
+    cv::Mat merge_test;
+    cv::cvtColor(map1, merge_test, cv::COLOR_GRAY2BGR);
+    for (int y = 0; y < merge_test .rows; y++) {
+        for (int x = 0; x < merge_test .cols; x++) {
+            uchar warped_map2_val = warped_map2.at<uchar>(y, x);
+            uchar map1_val = map1.at<uchar>(y, x);
+            // If the warped map2 pixel is black and map1 pixel is not black, set the pixel to red (bad overlap)
+            if (warped_map2_val == 0 && map1_val != 0) {
+                // Set the pixel to red
+                merge_test.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255);
+            }
+        }
+    }
+    cv::imshow("Merging test Map", merge_test);
+
+    /*
+    // Save the merging test image
+    string merge_test_path = save_dir + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_merge_test.png";
+    cv::imwrite(merge_test_path, merge_test);
+    */
+
     cv::waitKey(0);
     cv::destroyAllWindows();
 
     /*
     //test opencv version
     std::cout << cv::getBuildInformation() << std::endl;
-    
     */
-
+   
     return 0;
 }
 

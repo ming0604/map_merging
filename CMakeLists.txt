@@ -165,6 +165,9 @@ target_link_libraries(feature_matching_test ${catkin_LIBRARIES} ${OpenCV_LIBS} m
 add_executable(stitching_module_test src/stitching_module_test.cpp)
 target_link_libraries(stitching_module_test ${catkin_LIBRARIES} ${OpenCV_LIBS}) 
 
+add_executable(directly_use_map_topic_test src/directly_use_map_topic_test.cpp)
+target_link_libraries(directly_use_map_topic_test ${catkin_LIBRARIES} ${OpenCV_LIBS} map_merging_library) 
+
 #############
 ## Install ##
 #############

@@ -1,0 +1,24 @@
+<launch>
+  <arg name="map1" default="/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20241218_vive_mapping_test3.yaml"/>
+  <arg name="map2" default="/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20250216_vive_mapping_20m_test3.yaml"/>
+
+    <group ns="robot1">
+        <node pkg="map_server" type="map_server" name="map_server" args="$(arg map1)" output="screen">
+            <param name="frame_id" value="robot1"/>
+        </node>
+    </group>
+
+    <group ns="robot2">
+        <node pkg="map_server" type="map_server" name="map_server" args="$(arg map2)" output="screen">
+            <param name="frame_id" value="robot2"/>
+        </node>
+    </group>
+
+    <node pkg="map_merging" type="directly_use_map_topic_test" name="directly_use_map_topic_test" output="screen">
+        <param name="map1_image_path" value="/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20241218_vive_mapping_test3.pgm" />
+        <param name="map2_image_path" value="/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20250216_vive_mapping_20m_test3.pgm" />
+        <param name="output_folder_path" value="/home/mingzhun/Pictures/map_merging_output_image/" />
+        <param name="feature_type" value="AKAZE" />
+        <param name="use_stitching_module" value="false" />
+    </node>
+</launch>

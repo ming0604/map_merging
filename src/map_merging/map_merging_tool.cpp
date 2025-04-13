@@ -50,7 +50,7 @@ void MapMergingTool::match_features(const cv::Mat& descriptors1, const cv::Mat& 
     // Perform Lowe's ratio test to filter matches
     for(size_t i=0; i<backward_knn_matches.size(); i++)
     {   
-        if(forward_knn_matches[i].size() < 2)
+        if(backward_knn_matches[i].size() < 2)
         {
             continue;
         }

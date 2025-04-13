@@ -225,6 +225,15 @@ int main(int argc, char** argv)
             detector = cv::AKAZE::create();
             //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
             matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
+
+            /*
+            //FLANN based matcher
+            cv::Ptr<cv::flann::IndexParams> indexParams = cv::makePtr<cv::flann::KDTreeIndexParams>();
+            cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>();
+            indexParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+            searchParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+            matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
+            */
         }
         else if(feature_type == "ORB")
         {   
@@ -232,6 +241,15 @@ int main(int argc, char** argv)
             detector = cv::ORB::create(5000);
             //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
             matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
+
+            /*
+            //FLANN based matcher
+            cv::Ptr<cv::flann::IndexParams> indexParams = cv::makePtr<cv::flann::KDTreeIndexParams>();
+            cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>();
+            indexParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+            searchParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+            matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
+            */
         }
         else
         {
@@ -242,7 +260,8 @@ int main(int argc, char** argv)
         ROS_INFO("Feature type: %s", detector->getDefaultName().c_str());
 
         // Create a MapMergingTool object, passing in the detector and matcher
-        float ratio_threshold = 0.5;    
+        float ratio_threshold = 0.7;
+        //float ratio_threshold = 0.8;    
         MapMergingTool tool(detector, matcher, ratio_threshold);
 
         // Perform feature detection

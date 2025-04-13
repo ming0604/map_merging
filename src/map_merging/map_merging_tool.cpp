@@ -14,28 +14,84 @@ void MapMergingTool::detect_features(const cv::Mat& image, vector<cv::KeyPoint>&
     detector->detectAndCompute(image, cv::noArray(), keypoints, descriptors);
 }
 
-void MapMergingTool::match_features(const cv::Mat& descriptors1, const cv::Mat& descriptors2, vector<cv::DMatch>& matches)
+void MapMergingTool::match_features(const cv::Mat& descriptors1, const cv::Mat& descriptors2, vector<cv::DMatch>& final_matches)
 {   
     /*
     // Normal matching
     matcher->match(descriptors1, descriptors2, matches);
     */
-    // Perform Lowe's ratio test to filter matches 
-    vector<vector<cv::DMatch>> knn_matches;
+
+    // Forward matching: from descriptors1(image1) to descriptors2(image2)
+    vector<vector<cv::DMatch>> forward_knn_matches;
+    vector<cv::DMatch> forward_matches;
     // Find the 2 nearest neighbors (k=2) for each descriptor
-    matcher->knnMatch(descriptors1, descriptors2, knn_matches, 2); 
-    for(size_t i=0; i<knn_matches.size(); i++)
-    {
-        // If the ratio of the distance to the nearest neighbor and the second nearest neighbor is less than the threshold, keep the match
-        if(knn_matches[i][0].distance / knn_matches[i][1].distance < ratio_threshold)
+    matcher->knnMatch(descriptors1, descriptors2, forward_knn_matches, 2); 
+
+    // Perform Lowe's ratio test to filter matches 
+    for(size_t i=0; i<forward_knn_matches.size(); i++)
+    {   
+        if(forward_knn_matches[i].size() < 2)
         {
-            matches.push_back(knn_matches[i][0]);
+            continue;
+        }
+        // If the ratio of the distance to the nearest neighbor and the second nearest neighbor is less than the threshold, keep the match
+        if(forward_knn_matches[i][0].distance / forward_knn_matches[i][1].distance < ratio_threshold)
+        {
+            forward_matches.push_back(forward_knn_matches[i][0]);
         }
     }
     
-    // Sort matches by distance(ascending)
-    std::sort(matches.begin(), matches.end(), [](const cv::DMatch& a, const cv::DMatch& b) {return a.distance < b.distance;});
+    // Backward matching: from descriptors2(image2) to descriptors1(image1)
+    vector<vector<cv::DMatch>> backward_knn_matches;
+    vector<cv::DMatch> backward_matches;
+    // Find the 2 nearest neighbors (k=2) for each descriptor
+    matcher->knnMatch(descriptors2, descriptors1, backward_knn_matches, 2);
+    
+    // Perform Lowe's ratio test to filter matches
+    for(size_t i=0; i<backward_knn_matches.size(); i++)
+    {   
+        if(forward_knn_matches[i].size() < 2)
+        {
+            continue;
+        }
+        // If the ratio of the distance to the nearest neighbor and the second nearest neighbor is less than the threshold, keep the match
+        if(backward_knn_matches[i][0].distance / backward_knn_matches[i][1].distance < ratio_threshold)
+        {
+            backward_matches.push_back(backward_knn_matches[i][0]);
+        }
+    }
 
+    // Set the forward matches as the initial final matches
+    final_matches = forward_matches;
+    // For each reverse match, check if it is already in the forward matches
+    // If not, add the reverse match to the final matches
+    for(size_t i=0; i<backward_matches.size(); i++)
+    {
+        // Check if the match is in the forward matches
+        bool found = false;
+        for(size_t j=0; j<forward_matches.size(); j++)
+        {
+            if((backward_matches[i].queryIdx == forward_matches[j].trainIdx) && (backward_matches[i].trainIdx == forward_matches[j].queryIdx))
+            {
+                found = true;
+                break;
+            }
+
+        }
+        // If not found, add it to the final matches
+        if(!found)
+        {   
+            // Flip the match's queryIdx and trainIdx for matching drawing can be done correctly in the future
+            cv::DMatch flipped;
+            flipped.queryIdx = backward_matches[i].trainIdx;
+            flipped.trainIdx = backward_matches[i].queryIdx;
+            flipped.distance = backward_matches[i].distance;
+            final_matches.push_back(flipped);
+        }
+    }
+    
+    // Sort final matches by distance(ascending)
+    std::sort(final_matches.begin(), final_matches.end(), [](const cv::DMatch& a, const cv::DMatch& b) {return a.distance < b.distance;});
 }
 
 cv::Mat MapMergingTool::draw_features(const cv::Mat& image, const vector<cv::KeyPoint>& keypoints)

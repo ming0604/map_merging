@@ -98,16 +98,20 @@ int main(int argc, char** argv)
     cout << "Map2: " << map2_file_name << endl;
     
     // Convert the raw map color to the expected color
-    
-    // free space: white(0), occupied space: black(100), unknown space: gray(255), like the method of directly using map topic
+    // free space: black(0), occupied space: dark gray(100), unknown space: white(255), like the method of directly using map topic
     /*
-    cv::Mat map1 = convert_map_image_color(raw_map1, 0, 100, 255); 
-    cv::Mat map2 = convert_map_image_color(raw_map2, 0, 100, 255);
+    uchar free_color = 0; 
+    uchar occ_color = 100; 
+    uchar unknown_color = 255; 
     */
-    // free space: white(255), occupied space: black(0), unknown space: gray(100) 
-    cv::Mat map1 = convert_map_image_color(raw_map1, 255, 0, 127); 
-    cv::Mat map2 = convert_map_image_color(raw_map2, 255, 0, 127);
+    // free space: white(255), occupied space: black(0), unknown space: gray(127) 
+    uchar free_color = 255; 
+    uchar occ_color = 0; 
+    uchar unknown_color = 127; 
     
+    cv::Mat map1 = convert_map_image_color(raw_map1, free_color, occ_color, unknown_color);
+    cv::Mat map2 = convert_map_image_color(raw_map2, free_color, occ_color, unknown_color);
+
     // display the map after color conversion
     cv::namedWindow("Converted Map1", cv::WINDOW_NORMAL);
     cv::namedWindow("Converted Map2", cv::WINDOW_NORMAL);
@@ -282,11 +286,7 @@ int main(int argc, char** argv)
 
         /*
         // Save the images with features
-        string map1_with_features_path = save_dir + "directly_use_map_topic_" + map1_file_name + "_" + feature_type + "_features.png";
-        string map2_with_features_path = save_dir + "directly_use_map_topic_" + map2_file_name + "_" + feature_type + "_features.png";
-        cv::imwrite(map1_with_features_path, map1_with_features);
-        cv::imwrite(map2_with_features_path, map2_with_features);
-        cout << "Saved images with features to " << save_dir << endl;
+        
         */
         
         // Perform feature matching
@@ -316,7 +316,7 @@ int main(int argc, char** argv)
 
         /*
         // Save the inlier matches image
-        string inlier_img_path = save_dir + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_inlier_matches_.png";
+        string inlier_img_path = save_dir + "directly_change_map_color" + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_inlier_matches_.png";
         cv::imwrite(inlier_img_path, inlier_img);
         */
 
@@ -341,6 +341,11 @@ int main(int argc, char** argv)
         }
         cv::imshow("Merging test Map", merge_test);
 
+        /**/
+        // Save the merging test image
+        string merge_test_path = save_dir + "directly_change_map_color_" + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_merge_test.png";
+        cv::imwrite(merge_test_path, merge_test);
+        
 
     }
     cv::waitKey(0);

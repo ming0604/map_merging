@@ -1,5 +1,5 @@
 #include "map_merging/map_merging_tool.h"
-#include <algorithm>
+
 
 MapMergingTool::MapMergingTool(cv::Ptr<cv::Feature2D> feature_detector, cv::Ptr<cv::DescriptorMatcher> feature_matcher, float ratio_thr):detector(feature_detector), matcher(feature_matcher)
 , ratio_threshold(ratio_thr) 
@@ -173,4 +173,64 @@ cv::Mat MapMergingTool::draw_inlier_matches(const cv::Mat& image1, const vector<
     cout << "Number of inlier matches: " << inlier_matches_size << endl;
     return output;
 
+}
+
+bbox MapMergingTool::compute_global_map_bbox(const cv::Mat& ref_map, const cv::Mat& align_map, const cv::Mat& affine_to_ref)
+{
+    // Get the corner points of the reference map (in continuous coordinates)
+    vector<cv::Point2f> ref_map_corners = {
+        {0.0, 0.0},
+        {static_cast<float>(ref_map.cols), 0.0},
+        {0.0, static_cast<float>(ref_map.rows)},
+        {static_cast<float>(ref_map.cols), static_cast<float>(ref_map.rows)}
+    };
+    // Get the corner points of the aligned map (in continuous coordinates)
+    vector<cv::Point2f> align_map_corners = {
+        {0.0, 0.0},
+        {static_cast<float>(align_map.cols), 0.0},
+        {0.0, static_cast<float>(align_map.rows)},
+        {static_cast<float>(align_map.cols), static_cast<float>(align_map.rows)}
+    };
+    // Transform the corner points of the aligned map to the reference map's coordinate system
+    vector<cv::Point2f> transformed_align_map_corners;
+    cv::transform(align_map_corners, transformed_align_map_corners, affine_to_ref);
+
+    // Get the min and max x,y coordinates of all the corner points of the reference map and the transformed aligned map
+    vector<cv::Point2f> all_corners;
+    all_corners.insert(all_corners.end(), ref_map_corners.begin(), ref_map_corners.end());
+    all_corners.insert(all_corners.end(), transformed_align_map_corners.begin(), transformed_align_map_corners.end());
+    // Set the min and max x,y eqals to the first corner point as the initial value
+    float x_min = all_corners[0].x;
+    float x_max = all_corners[0].x;
+    float y_min = all_corners[0].y;
+    float y_max = all_corners[0].y;
+    // Iterate through all the corner points to find the min and max x,y coordinates
+    for(size_t i = 0; i < all_corners.size(); i++)
+    {
+        if(all_corners[i].x < x_min)
+        {
+            x_min = all_corners[i].x;
+        }
+        if(all_corners[i].x > x_max)
+        {
+            x_max = all_corners[i].x;
+        }
+        if(all_corners[i].y < y_min)
+        {
+            y_min = all_corners[i].y;
+        }
+        if(all_corners[i].y > y_max)
+        {
+            y_max = all_corners[i].y;
+        }
+    }
+
+    // Create a global map bounding box
+    bbox global_map_bbox;
+    global_map_bbox.x_min = static_cast<int>(std::floor(x_min));
+    global_map_bbox.x_max = static_cast<int>(std::ceil(x_max));
+    global_map_bbox.y_min = static_cast<int>(std::floor(y_min));
+    global_map_bbox.y_max = static_cast<int>(std::ceil(y_max));
+
+    return global_map_bbox;
 }

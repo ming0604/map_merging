@@ -9,6 +9,17 @@ MapMergingTool::MapMergingTool(cv::Ptr<cv::Feature2D> feature_detector, cv::Ptr<
 
 MapMergingTool::~MapMergingTool() {}
 
+
+void MapMergingTool::set_ratio_threshold(float thr)
+{
+    ratio_threshold = thr;
+}
+
+float MapMergingTool::get_ratio_threshold() const
+{
+    return ratio_threshold;
+}
+
 void MapMergingTool::detect_features(const cv::Mat& image, vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors)
 {
     detector->detectAndCompute(image, cv::noArray(), keypoints, descriptors);
@@ -175,7 +186,7 @@ cv::Mat MapMergingTool::draw_inlier_matches(const cv::Mat& image1, const vector<
 
 }
 
-bbox MapMergingTool::compute_global_map_bbox(const cv::Mat& ref_map, const cv::Mat& align_map, const cv::Mat& affine_to_ref)
+bbox MapMergingTool::compute_global_map_bbox(const cv::Mat& ref_map, const cv::Mat& align_map, const cv::Mat& affine_align_to_ref)
 {
     // Get the corner points of the reference map (in continuous coordinates)
     vector<cv::Point2f> ref_map_corners = {
@@ -193,7 +204,7 @@ bbox MapMergingTool::compute_global_map_bbox(const cv::Mat& ref_map, const cv::M
     };
     // Transform the corner points of the aligned map to the reference map's coordinate system
     vector<cv::Point2f> transformed_align_map_corners;
-    cv::transform(align_map_corners, transformed_align_map_corners, affine_to_ref);
+    cv::transform(align_map_corners, transformed_align_map_corners, affine_align_to_ref);
 
     // Get the min and max x,y coordinates of all the corner points of the reference map and the transformed aligned map
     vector<cv::Point2f> all_corners;
@@ -227,10 +238,203 @@ bbox MapMergingTool::compute_global_map_bbox(const cv::Mat& ref_map, const cv::M
 
     // Create a global map bounding box
     bbox global_map_bbox;
+    // Min needs to be floored (to the upper left)m
     global_map_bbox.x_min = static_cast<int>(std::floor(x_min));
-    global_map_bbox.x_max = static_cast<int>(std::ceil(x_max));
     global_map_bbox.y_min = static_cast<int>(std::floor(y_min));
-    global_map_bbox.y_max = static_cast<int>(std::ceil(y_max));
+    // Max needs to be ceiled (to the lower right)
+    // The max value needs to -1 because the pixel coordinates 
+    global_map_bbox.x_max = static_cast<int>(std::ceil(x_max))-1;
+    global_map_bbox.y_max = static_cast<int>(std::ceil(y_max))-1;
 
     return global_map_bbox;
+}
+
+void MapMergingTool::compute_origin_shift(const bbox& global_bbox_on_ref, int ref_rows, int& origin_shift_x_cells, int& origin_shift_y_cells)
+{
+    // Compute the origin shift in ROS map coordinates, which is the bottom-left cell need to be added to the map
+    origin_shift_x_cells = -global_bbox_on_ref.x_min;
+    origin_shift_y_cells = global_bbox_on_ref.y_max - (ref_rows - 1); // ref_rows  
+}
+
+void MapMergingTool::compute_global_affine(const bbox& global_bbox, const cv::Mat& affine_align_to_ref, cv::Mat& affine_ref_to_global,
+                                            cv::Mat& affine_align_to_global)
+{
+    // Compute shift of the reference map to the global map
+    double tx = -global_bbox.x_min;
+    double ty = -global_bbox.y_min;
+    // Create the affine matrix (2*3) from the reference map to the global map
+    // [1 0 tx]
+    // [0 1 ty]
+    affine_ref_to_global = (cv::Mat_<double>(2, 3) << 1.0, 0.0, tx, 0.0, 1.0, ty);
+
+    // Use homogeneous transformation to compute the affine matrix from the aligned map to the global map
+
+    // Build 3×3 homogeneous transformation matrix of the reference map to the global map
+    //  [1 0 tx]
+    //  [0 1 ty]
+    //  [0 0 1 ]
+    cv::Mat homo_ref_to_global = cv::Mat::eye(3, 3, CV_64F);
+    homo_ref_to_global.at<double>(0, 2) = tx;
+    homo_ref_to_global.at<double>(1, 2) = ty;
+    // Build 3×3 homogeneous transformation matrix of the align map to the reference map
+    cv::Mat homo_align_to_ref = cv::Mat::eye(3, 3, CV_64F);
+    affine_align_to_ref.copyTo(homo_align_to_ref(cv::Range(0, 2), cv::Range(0, 3)));
+    // align_to_global = ref_to_global * align_to_ref
+    cv::Mat homo_align_to_global = homo_ref_to_global * homo_align_to_ref;
+    // Extract back to 2×3 for affine matrix
+    affine_align_to_global = homo_align_to_global(cv::Range(0, 2), cv::Range(0, 3)).clone();
+}
+
+double MapMergingTool::compute_acceptance_index(const cv::Mat& ref_map_on_global, const cv::Mat& align_map_on_global)
+{   
+
+    // Check if the two maps have the same size in the global coordinate system.
+    // If not, report an error and return -1.
+    if(ref_map_on_global.size() != align_map_on_global.size())
+    {
+        ROS_ERROR("compute_acceptance_index: global size mismatch: ref=(%dx%d), ali=(%dx%d)",ref_map_on_global.rows, 
+                    ref_map_on_global.cols, align_map_on_global.rows, align_map_on_global.cols);
+        return -1.0;
+    }
+
+    int agr_cells = 0;
+    int dis_cells = 0;
+    uchar ref_value, align_value;
+    for(int y=0; y<ref_map_on_global.rows; y++)
+    {   
+        for(int x=0; x<ref_map_on_global.cols; x++)
+        {
+            ref_value = ref_map_on_global.at<uchar>(y,x);
+            align_value = align_map_on_global.at<uchar>(y,x);
+            // Skip the unknown cells
+            if(ref_value == UNKNOWN_COLOR || align_value == UNKNOWN_COLOR)
+            {
+                continue;
+            }
+
+            // Check the value is valid
+            if((ref_value == OCCUPIED_COLOR || ref_value == FREE_COLOR)&&
+               (align_value == OCCUPIED_COLOR || align_value == FREE_COLOR))
+            {
+                // If the two maps have the same value, count as agreement
+                if(ref_value == align_value)
+                {
+                    agr_cells++;
+                }
+                // If the two maps have different values, count as disagreement
+                else
+                {
+                    dis_cells++;
+                }
+            }
+            else
+            {
+                ROS_ERROR("compute_acceptance_index: invalid value in the map at (%d,%d): reference map value=%u, aligned map value=%u",
+                            y, x, static_cast<unsigned int>(ref_value), static_cast<unsigned int>(align_value));
+                return -1.0;
+            }
+        }
+    }
+
+    // Compute the acceptance index
+    double acc_index;
+    if(agr_cells + dis_cells == 0)
+    {
+        ROS_WARN("compute_acceptance_index: (agr + dis) equals 0, return 0.0");
+        acc_index = 0.0;
+    }
+    else
+    {
+        acc_index = (static_cast<double>(agr_cells) / static_cast<double>(agr_cells + dis_cells));
+    }
+    
+    return acc_index;
+}
+
+cv::Mat MapMergingTool::generate_merged_map(const cv::Mat& ref_map_on_global, const cv::Mat& align_map_on_global)
+{
+    // Check if the two maps have the same size in the global coordinate system.
+    // If not, report an error and return an empty map.
+    if(ref_map_on_global.size() != align_map_on_global.size())
+    {
+        ROS_ERROR("generate_merged_map: global size mismatch: ref=(%dx%d), ali=(%dx%d)",ref_map_on_global.rows, 
+                    ref_map_on_global.cols, align_map_on_global.rows, align_map_on_global.cols);
+        exit(-1);
+    }
+
+    // Create a new map to store the merged map (initially set to unknown color)
+    cv::Mat merged_map = cv::Mat(ref_map_on_global.size(), CV_8UC1, cv::Scalar(UNKNOWN_COLOR));
+    uchar ref_value, align_value;
+    for(int y=0; y<ref_map_on_global.rows; y++)
+    {   
+        for(int x=0; x<ref_map_on_global.cols; x++)
+        {
+            ref_value = ref_map_on_global.at<uchar>(y,x);
+            align_value = align_map_on_global.at<uchar>(y,x);
+            // If the two maps have the same value, set the merged map to that value
+            if(ref_value == align_value)
+            {
+                merged_map.at<uchar>(y,x) = ref_value;
+            }
+            // If one map is occupied and the other is free, set the merged map to occupied
+            else if((ref_value == OCCUPIED_COLOR && align_value == FREE_COLOR) ||
+                    (ref_value == FREE_COLOR && align_value == OCCUPIED_COLOR))
+            {
+                merged_map.at<uchar>(y,x) = OCCUPIED_COLOR;
+            }
+            // If one map is unknown and the other is Known(free or occpied), set the merged map to the known value
+            else if(ref_value == UNKNOWN_COLOR && (align_value == OCCUPIED_COLOR || align_value == FREE_COLOR))
+            {
+                merged_map.at<uchar>(y,x) = align_value;
+            }
+            else if(align_value == UNKNOWN_COLOR && (ref_value == OCCUPIED_COLOR || ref_value == FREE_COLOR))
+            {
+                merged_map.at<uchar>(y,x) = ref_value;
+            }
+   
+            else
+            {
+                ROS_ERROR("generate_merged_map: invalid value in the map at (%d,%d): reference map value=%u, aligned map value=%u",
+                            y, x, static_cast<unsigned int>(ref_value), static_cast<unsigned int>(align_value));
+                exit(-1);
+            }
+        }
+    }
+
+    // Return the merged map
+    return merged_map;
+}
+
+cv::Mat MapMergingTool::merge_maps(const cv::Mat& reference_map, const cv::Mat& align_map, const cv::Mat& affine_align_to_ref, 
+                                    int& origin_shift_x_cells, int& origin_shift_y_cells, double& acceptance_index)
+{
+    // 1. Compute the global map bounding box
+    bbox global_map_bbox_on_ref_frame = compute_global_map_bbox(reference_map, align_map, affine_align_to_ref);
+
+    // 2. Compute the origin shift
+    compute_origin_shift(global_map_bbox_on_ref_frame, reference_map.rows, origin_shift_x_cells, origin_shift_y_cells);
+
+    // 3. Compute the global affine transformation matrix
+    cv::Mat affine_ref_to_global, affine_align_to_global;
+    compute_global_affine(global_map_bbox_on_ref_frame, affine_align_to_ref, affine_ref_to_global, affine_align_to_global);
+
+    // 4. Warp each map into the global coordinate system
+    // Compute the size of the global map (bounding box is in pixel coordinates)
+    int global_map_h = global_map_bbox_on_ref_frame.y_max - global_map_bbox_on_ref_frame.y_min + 1;
+    int global_map_w = global_map_bbox_on_ref_frame.x_max - global_map_bbox_on_ref_frame.x_min + 1;
+    // Create canvas for the two maps in the global coordinate system, and initialize them to unknown color
+    cv::Mat ref_on_global(global_map_h, global_map_w, reference_map.type(), cv::Scalar(UNKNOWN_COLOR));
+    cv::Mat align_on_global(global_map_h, global_map_w, align_map.type(), cv::Scalar(UNKNOWN_COLOR));
+    // Warp the two maps to the global coordinate system
+    cv::warpAffine(reference_map, ref_on_global, affine_ref_to_global, ref_on_global.size(), 
+                    cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(UNKNOWN_COLOR));
+    cv::warpAffine(align_map, align_on_global, affine_align_to_global, align_on_global.size(),
+                    cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(UNKNOWN_COLOR));
+    // 5. Merge the two maps into the final map
+    cv::Mat final_merged_map = generate_merged_map(ref_on_global, align_on_global);
+    // 6. Compute the acceptance index
+    acceptance_index = compute_acceptance_index(ref_on_global, align_on_global);
+
+    // Return the final merged map
+    return final_merged_map;
 }

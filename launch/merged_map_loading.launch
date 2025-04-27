@@ -1,0 +1,12 @@
+<launch>
+
+    <arg name="merged_map" default="/home/mingzhun/lab_localization/src/map_merging/merging_result/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging/merged_map_test.yaml"/>
+    <!--<arg name="merged_map" default="/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20241218_vive_mapping_test3.yaml"/> -->
+    <!--load the merged map by the map_server-->
+    <node pkg="map_server" type="map_server" name="map_server" args="$(arg merged_map)"/> 
+
+    <!--open rviz to visualize the merged map-->
+    <arg name="rvizconfig" default="$(find map_merging)/rviz/merged_map_loading.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+</launch>

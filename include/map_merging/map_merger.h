@@ -9,6 +9,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <yaml-cpp/yaml.h>
 
 
 typedef struct MapData

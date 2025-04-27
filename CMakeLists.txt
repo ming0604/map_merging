@@ -19,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
 set(OpenCV_DIR /usr/local/lib/cmake/opencv4)
 find_package(OpenCV REQUIRED)
 
+find_package(yaml-cpp REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -125,6 +127,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
@@ -158,6 +161,7 @@ add_library(map_merging_library
 target_link_libraries(
   map_merging_library
   ${catkin_LIBRARIES}
+  yaml-cpp
 )
 
 add_executable(feature_matching_test src/feature_matching_test.cpp)
@@ -173,7 +177,7 @@ add_executable(directly_change_map_color_test src/directly_change_map_color_test
 target_link_libraries(directly_change_map_color_test ${catkin_LIBRARIES} ${OpenCV_LIBS} map_merging_library) 
 
 add_executable(map_merging src/map_merging_main.cpp)
-target_link_libraries(map_merging ${catkin_LIBRARIES} ${OpenCV_LIBS} map_merging_library)
+target_link_libraries(map_merging ${catkin_LIBRARIES} ${OpenCV_LIBS} yaml-cpp map_merging_library)
 
 #############
 ## Install ##

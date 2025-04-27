@@ -20,24 +20,22 @@ string MapMerger::getFileName(const string& path)
 }
 
 void MapMerger::load_map_data(const string& yaml_path, MapData& map_data)
-{
-    // Load the yaml file
-    cv::FileStorage fs(yaml_path, cv::FileStorage::READ);
-    if(!fs.isOpened()) 
-    {
-        ROS_ERROR("Failed to open yaml file: %s", yaml_path.c_str());
-        exit(-1);
-    }
-    // Read the map image path
-    fs["image"] >> map_data.map_img_path;
-    // Find the map name
+{   
+    ROS_INFO("Loading map data from %s", yaml_path.c_str());
+
+    // Read the yaml file 
+    YAML::Node yaml_node = YAML::LoadFile(yaml_path);
+    // Get the map raw image path
+    map_data.map_img_path = yaml_node["image"].as<string>();
+    // Get the map name
     map_data.map_name = getFileName(map_data.map_img_path);
-    // Read the map resolution
-    fs["resolution"] >> map_data.resolution;
-    // Read the map origin
-    fs["origin"] >> map_data.origin;
-    // Close the file
-    fs.release();
+    // Get the map resolution
+    map_data.resolution = yaml_node["resolution"].as<double>();
+    // Get the map origin
+    for(int i=0; i<3; i++)
+    {
+        map_data.origin.push_back(yaml_node["origin"][i].as<double>());
+    }
 
     // Load the map image
     map_data.raw_image = cv::imread(map_data.map_img_path, cv::IMREAD_GRAYSCALE);
@@ -86,6 +84,8 @@ void MapMerger::load_maps(const string& maps_folder_path, const string& ref_map_
             // Add the map data to the vector of maps
             maps.push_back(map_data);
             ROS_INFO("Loaded map: %s", map_data.map_name.c_str());
+            ROS_INFO("resolution: %.4f, origin: [%.4f, %.4f, %.4f]", map_data.resolution, 
+                    map_data.origin[0], map_data.origin[1], map_data.origin[2]);
         }
         entry = readdir(dir);
     }
@@ -118,7 +118,7 @@ void MapMerger::load_maps(const string& maps_folder_path, const string& ref_map_
         ROS_INFO("Load maps successfully");
         for(size_t i=0; i<maps.size(); i++)
         {
-            ROS_INFO("Map %zu: %s", i, maps[i].map_name.c_str());
+            ROS_INFO("Map %zu: %s", i+1, maps[i].map_name.c_str());
         }
     }
 
@@ -198,7 +198,7 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
         cv::Mat match_img = merge_tool.draw_matches(ref_map.converted_image, ref_map.features, 
                                                     maps[i].converted_image, maps[i].features, matches);
         // Save the matching result image
-        string match_img_path = output_folder_path + ref_map.map_name + "_" + "map"+ to_string(i) + "_matches.png";
+        string match_img_path = output_folder_path + ref_map.map_name + "_" + "map"+ to_string(i+1) + "_matches.png";
         cv::imwrite(match_img_path, match_img);
 
         // Compute the affine transformation matrix
@@ -209,7 +209,7 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
                                                             maps[i].converted_image, maps[i].features,
                                                             matches, inliers);
         // Save the inlier matches image
-        string inlier_img_path = output_folder_path + ref_map.map_name + "_" + "map"+ to_string(i) + "_inlier_matches.png";
+        string inlier_img_path = output_folder_path + ref_map.map_name + "_" + "map"+ to_string(i+1) + "_inlier_matches.png";
         cv::imwrite(inlier_img_path, inlier_img);
         
         // Merge the two maps using the computed affine transformation matrix
@@ -241,29 +241,28 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
     // Save the final merged map
     string merged_map_path = output_folder_path + merged_map_name + ".pgm";
     cv::imwrite(merged_map_path, final_merged_map.raw_image);
+    ROS_INFO("Merged map image saved to %s", output_folder_path.c_str());
 
     // Save the final merged map yaml file
     string merged_map_yaml_path = output_folder_path + merged_map_name + ".yaml";
-    cv::FileStorage fs(merged_map_yaml_path, cv::FileStorage::WRITE);
-    if(!fs.isOpened()) 
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "image" << YAML::Value << merged_map_path;
+    out << YAML::Key << "resolution" << YAML::Value << final_merged_map.resolution;
+    out << YAML::Key << "origin" << YAML::Value << YAML::Flow << final_merged_map.origin;
+    out << YAML::Key << "negate" << YAML::Value << 0;
+    out << YAML::Key << "occupied_thresh" << YAML::Value << 0.65;
+    out << YAML::Key << "free_thresh" << YAML::Value << 0.196;
+    out << YAML::EndMap;
+    ofstream fout(merged_map_yaml_path);
+    if (!fout.is_open()) 
     {
         ROS_ERROR("Failed to open yaml file: %s", merged_map_yaml_path.c_str());
         exit(-1);
     }
-    // Write the map image path
-    fs << "image" << merged_map_path;
-    // Write the map resolution
-    fs << "resolution" << final_merged_map.resolution;
-    // Write the map origin 
-    fs << "origin" << final_merged_map.origin;
-    // Write other information
-    fs << "negate" << 0;
-    fs << "occupied_thresh" << 0.65;
-    fs << "free_thresh" << 0.196;
-    // Close the file
-    fs.release();
-
-    ROS_INFO("Merged map saved to %s", output_folder_path.c_str());
+    fout << out.c_str();
+    fout.close();
+    ROS_INFO("Merged map yaml file saved to %s", merged_map_yaml_path.c_str());
 
     // Create a new txt file to save the all maps name and the merged map name
     string merged_map_txt_path = output_folder_path + "maps_info" + ".txt";

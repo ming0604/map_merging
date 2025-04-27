@@ -22,7 +22,6 @@ const uchar OCCUPIED_COLOR = 0; // black
 const uchar FREE_COLOR = 254; // almost white
 const uchar UNKNOWN_COLOR = 205; // light gray
 
-using namespace std;
 
 class MapMergingTool
 {
@@ -32,16 +31,16 @@ class MapMergingTool
 
         void set_ratio_threshold(float thr); 
         float get_ratio_threshold() const;
-        void detect_features(const cv::Mat& image, vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
-        void match_features(const cv::Mat& descriptors1, const cv::Mat& descriptors2, vector<cv::DMatch>& matches);
-        cv::Mat draw_features(const cv::Mat& image, const vector<cv::KeyPoint>& keypoints);
-        cv::Mat draw_matches(const cv::Mat& image1, const vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
-                             const vector<cv::KeyPoint>& keypoints2, const vector<cv::DMatch>& matches);
+        void detect_features(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
+        void match_features(const cv::Mat& descriptors1, const cv::Mat& descriptors2, std::vector<cv::DMatch>& matches);
+        cv::Mat draw_features(const cv::Mat& image, const std::vector<cv::KeyPoint>& keypoints);
+        cv::Mat draw_matches(const cv::Mat& image1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
+                             const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches);
 
-        cv::Mat compute_affine_matrix(const vector<cv::KeyPoint>& keypoints1, const vector<cv::KeyPoint>& keypoints2, 
-                                        const vector<cv::DMatch>& matches, cv::Mat& inliers);
-        cv::Mat draw_inlier_matches(const cv::Mat& image1, const vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
-                                    const vector<cv::KeyPoint>& keypoints2, const vector<cv::DMatch>& matches, const cv::Mat& inliers);
+        cv::Mat compute_affine_matrix(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2, 
+                                        const std::vector<cv::DMatch>& matches, cv::Mat& inliers);
+        cv::Mat draw_inlier_matches(const cv::Mat& image1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
+                                    const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches, const cv::Mat& inliers);
         cv::Mat merge_maps(const cv::Mat& reference_map, const cv::Mat& align_map, const cv::Mat& affine_align_to_ref, 
                             int& origin_shift_x_cells, int& origin_shift_y_cells, double& acceptance_index);
     private:

@@ -1,10 +1,11 @@
 #include "map_merging/map_merging_tool.h"
 
+using namespace std;
 
 MapMergingTool::MapMergingTool(cv::Ptr<cv::Feature2D> feature_detector, cv::Ptr<cv::DescriptorMatcher> feature_matcher, float ratio_thr):detector(feature_detector), matcher(feature_matcher)
 , ratio_threshold(ratio_thr) 
 {
-    ROS_INFO("Map merging tool constructed,and the matching ratio threshold is %f",ratio_threshold);
+    ROS_INFO("Map merging tool constructed, feature type: %s, ratio threshold: %f", feature_detector->getDefaultName().c_str(), ratio_thr);
 }
 
 MapMergingTool::~MapMergingTool() {}

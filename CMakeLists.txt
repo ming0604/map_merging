@@ -130,6 +130,7 @@ include_directories(
 ## Declare a C++ library
 add_library(map_merging_library
     src/${PROJECT_NAME}/map_merging_tool.cpp
+    src/${PROJECT_NAME}/map_merger.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -170,6 +171,9 @@ target_link_libraries(directly_use_map_topic_test ${catkin_LIBRARIES} ${OpenCV_L
 
 add_executable(directly_change_map_color_test src/directly_change_map_color_test.cpp)
 target_link_libraries(directly_change_map_color_test ${catkin_LIBRARIES} ${OpenCV_LIBS} map_merging_library) 
+
+add_executable(map_merging src/map_merging_main.cpp)
+target_link_libraries(map_merging ${catkin_LIBRARIES} ${OpenCV_LIBS} map_merging_library)
 
 #############
 ## Install ##

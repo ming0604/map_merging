@@ -274,10 +274,11 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
         ROS_ERROR("Failed to open file: %s", merged_map_txt_path.c_str());
         exit(-1);
     }
-    // Write the maps name to the file
+    // Write the maps name and number of features to the file
     for(size_t i=0; i<maps.size(); i++)
     {
         maps_info_file << "map" << (i+1) << ": " << maps[i].map_name << endl;
+        maps_info_file << "number of features: " << maps[i].features.size() << endl;
     }
     // Write the merged map name to the file
     maps_info_file << "merged_map: " << merged_map_name << endl;

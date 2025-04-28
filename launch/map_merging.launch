@@ -7,9 +7,15 @@
         <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging/"/>
         <param name="merged_map_name" value="merged_map_test"/>
         <param name="ratio_test_threshold" value="0.7"/>
+        <!--free space: black(0), occupied space: dark gray(100), unknown space: white(255), like the method of directly using map topic--> 
+        <param name="free_color_expected" value="0"/>
+        <param name="occ_color_expected" value="100"/>
+        <param name="unknown_color_expected" value="255"/>
+        <!--
         <param name="free_color_expected" value="255"/>
         <param name="occ_color_expected" value="0"/>
         <param name="unknown_color_expected" value="127"/>
+        -->
     </node>
 
 </launch>

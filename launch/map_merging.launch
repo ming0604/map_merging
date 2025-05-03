@@ -2,10 +2,11 @@
     <!-- folder path need / at the end -->
     <node pkg="map_merging" type="map_merging" name="map_merging" output="screen">
         <param name="feature_type" value="AKAZE"/>
-        <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/2025_04_27_first_test/"/>
+        <param name="matcher_type" value="BF"/>
+        <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging_test/"/>
         <param name="reference_map_name" value="20241218_vive_mapping_test3"/>
-        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging/"/>
-        <param name="merged_map_name" value="merged_map_test"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging_tuning/"/>
+        <param name="merged_map_name" value="map_info_test"/>
         <param name="ratio_test_threshold" value="0.7"/>
         <!--free space: black(0), occupied space: dark gray(100), unknown space: white(255), like the method of directly using map topic--> 
         <param name="free_color_expected" value="0"/>

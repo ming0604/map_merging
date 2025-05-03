@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include "map_merging/map_merging_tool.h"  // Adjust path according to your package structure
+#include "map_merging/map_merging_tool.h"  
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <string>
@@ -37,6 +37,8 @@ int main(int argc, char** argv)
     // Read the two map images
     cv::Mat map1 = cv::imread(map1Path, cv::IMREAD_GRAYSCALE);
     cv::Mat map2 = cv::imread(map2Path, cv::IMREAD_GRAYSCALE);
+    // Print the images  area
+    //cout << "map2 mat area:" << map2(cv::Rect(300, 500, 100, 100)) << endl; 
     if (map1.empty() || map2.empty())
     {
         cerr << "Error: Cannot read image " << map1Path << " or " << map2Path << endl;
@@ -131,7 +133,9 @@ int main(int argc, char** argv)
 
     // Compute the affine transformation matrix
     cv::Mat inliers;
-    cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers);
+    int num_inliers;
+    cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers, num_inliers);
+    cout << "Number of inliers: " << num_inliers << endl;
     // Draw the inlier matches
     cv::Mat inlier_img = tool.draw_inlier_matches(map1, kp1, map2, kp2, matches, inliers);
     cv::imshow("Inlier Matches", inlier_img);
@@ -144,8 +148,7 @@ int main(int argc, char** argv)
 
     // Draw the warped map2 using the computed affine matrix
     cv::Mat warped_map2;
-    cv::warpAffine(map2, warped_map2, affine, map1.size(),
-                   cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255));
+    cv::warpAffine(map2, warped_map2, affine, map1.size(),cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(255));
     cv::imshow("Warped Map2", warped_map2);
     // Use map1 as the base map, see how well map2 is overlaid on map1
     cv::Mat merge_test;

@@ -99,16 +99,16 @@ int main(int argc, char** argv)
     
     // Convert the raw map color to the expected color
     // free space: black(0), occupied space: dark gray(100), unknown space: white(255), like the method of directly using map topic
-    /*
+    
     uchar free_color = 0; 
     uchar occ_color = 100; 
     uchar unknown_color = 255; 
-    */
+    /*
     // free space: white(255), occupied space: black(0), unknown space: gray(127) 
     uchar free_color = 255; 
     uchar occ_color = 0; 
     uchar unknown_color = 127; 
-    
+    */
     cv::Mat map1 = convert_map_image_color(raw_map1, free_color, occ_color, unknown_color);
     cv::Mat map2 = convert_map_image_color(raw_map2, free_color, occ_color, unknown_color);
 
@@ -262,7 +262,7 @@ int main(int argc, char** argv)
         }
         // Print the feature type
         ROS_INFO("Feature type: %s", detector->getDefaultName().c_str());
-
+        
         // Create a MapMergingTool object, passing in the detector and matcher
         float ratio_threshold = 0.7;
         //float ratio_threshold = 0.8;    
@@ -286,7 +286,12 @@ int main(int argc, char** argv)
 
         /*
         // Save the images with features
-        
+
+        string map1_with_features_path = save_dir + map1_file_name + "_" + feature_type + "_features.png";
+        string map2_with_features_path = save_dir + map2_file_name + "_" + feature_type + "_features.png";
+        cv::imwrite(map1_with_features_path, map1_with_features);
+        cv::imwrite(map2_with_features_path, map2_with_features);
+        cout << "Saved images with features to " << save_dir << endl;
         */
         
         // Perform feature matching
@@ -309,7 +314,9 @@ int main(int argc, char** argv)
 
         // Compute the affine transformation matrix
         cv::Mat inliers;
-        cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers);
+        int num_inliers;
+        cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers, num_inliers);
+        cout << "Number of inliers: " << num_inliers << endl;
         // Draw the inlier matches
         cv::Mat inlier_img = tool.draw_inlier_matches(map1, kp1, map2, kp2, matches, inliers);
         cv::imshow("Inlier Matches", inlier_img);
@@ -322,8 +329,7 @@ int main(int argc, char** argv)
 
         // Draw the warped raw map2 using the computed affine matrix
         cv::Mat warped_map2;
-        cv::warpAffine(raw_map2, warped_map2, affine, map1.size(),
-                    cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255));
+        cv::warpAffine(raw_map2, warped_map2, affine, map1.size(),cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(255));
         cv::imshow("Warped Map2", warped_map2);
         // Use map1 as the base map, see how well map2 is overlaid on map1
         cv::Mat merge_test;
@@ -341,11 +347,11 @@ int main(int argc, char** argv)
         }
         cv::imshow("Merging test Map", merge_test);
 
-        /**/
+        /*
         // Save the merging test image
         string merge_test_path = save_dir + "directly_change_map_color_" + map1_file_name + "_" + map2_file_name + "_" + feature_type + "_merge_test.png";
         cv::imwrite(merge_test_path, merge_test);
-        
+        */
 
     }
     cv::waitKey(0);

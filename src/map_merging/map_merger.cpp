@@ -176,7 +176,10 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
     {
         convert_map_color(maps[i].raw_image, maps[i].converted_image, free_color, occ_color, unknown_color);
     }
-
+    // Vector to store the number of matches, number of inliers and the acceptance index of every merging process
+    vector<int> num_matches_vec;
+    vector<int> num_inliers_vec;
+    vector<double> acc_index_vec;
     // Set the reference map as the first map at the beginning
     merge_tool.detect_features(maps[0].converted_image, maps[0].features, maps[0].descriptors);
     MapData ref_map = maps[0];
@@ -194,6 +197,8 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
         vector<cv::DMatch> matches;
         merge_tool.match_features(ref_map.descriptors, maps[i].descriptors, matches);
         ROS_INFO("Number of matches between reference map %s and map %zu: %zu",ref_map.map_name.c_str(), i+1, matches.size());
+        // Store the number of matches
+        num_matches_vec.push_back(matches.size());
         // Draw the matching results
         cv::Mat match_img = merge_tool.draw_matches(ref_map.converted_image, ref_map.features, 
                                                     maps[i].converted_image, maps[i].features, matches);
@@ -203,7 +208,12 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
 
         // Compute the affine transformation matrix
         cv::Mat inliers;
-        cv::Mat affine = merge_tool.compute_affine_matrix(ref_map.features, maps[i].features, matches, inliers);
+        int num_inliers;
+        cv::Mat affine = merge_tool.compute_affine_matrix(ref_map.features, maps[i].features, matches, inliers, num_inliers);
+        // Print the number of inliers
+        ROS_INFO("Number of inliers between reference map %s and map %zu: %d", ref_map.map_name.c_str(), i+1, num_inliers);
+        // Store the number of inliers
+        num_inliers_vec.push_back(num_inliers);
         // Draw the inlier matches
         cv::Mat inlier_img = merge_tool.draw_inlier_matches(ref_map.converted_image, ref_map.features,
                                                             maps[i].converted_image, maps[i].features,
@@ -216,7 +226,10 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
         cv::Mat merged_map = merge_tool.merge_maps(ref_map.raw_image, maps[i].raw_image, affine, origin_shift_x_cells,
                                                     origin_shift_y_cells, acceptance_index);
         // Print the acceptance index
-        ROS_INFO("Acceptance index between reference map %s and map %zu: %f", ref_map.map_name.c_str(), i+1, acceptance_index);                                    
+        ROS_INFO("Acceptance index between reference map %s and map %zu: %f", ref_map.map_name.c_str(), i+1, acceptance_index); 
+        // Store the acceptance index
+        acc_index_vec.push_back(acceptance_index); 
+
         // Update the total origin shift cells
         origin_shift_x_cells_total += origin_shift_x_cells;
         origin_shift_y_cells_total += origin_shift_y_cells;
@@ -264,7 +277,7 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
     fout.close();
     ROS_INFO("Merged map yaml file saved to %s", merged_map_yaml_path.c_str());
 
-    // Create a new txt file to save the all maps name and the merged map name
+    // Create a new txt file to save the information of merging process
     string merged_map_txt_path = output_folder_path + "maps_info" + ".txt";
     ofstream maps_info_file;
     maps_info_file.open(merged_map_txt_path);
@@ -275,6 +288,7 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
         exit(-1);
     }
     // Write the maps name and number of features to the file
+    maps_info_file << "##maps and their number of features:" << endl;
     for(size_t i=0; i<maps.size(); i++)
     {
         maps_info_file << "map" << (i+1) << ": " << maps[i].map_name << endl;
@@ -282,6 +296,37 @@ void MapMerger::merge_maps(const string& output_folder_path, const string& merge
     }
     // Write the merged map name to the file
     maps_info_file << "merged_map: " << merged_map_name << endl;
+    maps_info_file << endl;   // add a blank line
+
+    // Write the number of matches to the file
+    maps_info_file << "##number of matches:" << endl;
+    string map_temp_name = "map1";
+    for(size_t i=0; i<num_matches_vec.size(); i++)
+    {
+        maps_info_file << "Number of matches between " << map_temp_name << " and map" << (i+2) << ": " << num_matches_vec[i] << endl;
+        map_temp_name = map_temp_name + "+" + to_string(i+2);
+    }
+    maps_info_file << endl;   // add a blank line
+
+    // Write the number of inliers to the file
+    maps_info_file << "##number of inliers:" << endl;
+    map_temp_name = "map1";
+    for(size_t i=0; i<num_inliers_vec.size(); i++)
+    {
+        maps_info_file << "Number of inliers between " << map_temp_name << " and map" << (i+2) << ": " << num_inliers_vec[i] << endl;
+        map_temp_name = map_temp_name + "+" + to_string(i+2);
+    }
+    maps_info_file << endl;   // add a blank line
+    
+    // Write the acceptance index to the file
+    maps_info_file << "##acceptance index:" << endl;
+    map_temp_name = "map1";
+    for(size_t i=0; i<acc_index_vec.size(); i++)
+    {
+        maps_info_file << "Acceptance index between " << map_temp_name << " and map" << (i+2) << ": " << acc_index_vec[i] << endl;
+        map_temp_name = map_temp_name + "+" + to_string(i+2);
+    }
+
     // Close the file
     maps_info_file.close();
 

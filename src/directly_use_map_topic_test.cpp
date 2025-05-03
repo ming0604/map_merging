@@ -276,7 +276,9 @@ int main(int argc, char** argv)
 
         // Compute the affine transformation matrix
         cv::Mat inliers;
-        cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers);
+        int num_inliers;
+        cv::Mat affine = tool.compute_affine_matrix(kp1, kp2, matches, inliers, num_inliers);
+        cout << "Number of inliers: " << num_inliers << endl;
         // Draw the inlier matches
         cv::Mat inlier_img = tool.draw_inlier_matches(map1_image_mat, kp1, map2_image_mat, kp2, matches, inliers);
         cv::imshow("Inlier Matches", inlier_img);

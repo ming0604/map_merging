@@ -122,7 +122,7 @@ cv::Mat MapMergingTool::draw_matches(const cv::Mat& image1, const vector<cv::Key
 }
 /**/
 cv::Mat MapMergingTool::compute_affine_matrix(const vector<cv::KeyPoint>& keypoints1,const vector<cv::KeyPoint>& keypoints2,
-                                            const vector<cv::DMatch>& matches, cv::Mat& inliers)
+                                            const vector<cv::DMatch>& matches, cv::Mat& inliers, int& num_inliers)
 {
     // Check if the number of matches is less than 3
     if(matches.size() < 3)
@@ -148,8 +148,18 @@ cv::Mat MapMergingTool::compute_affine_matrix(const vector<cv::KeyPoint>& keypoi
         exit(1);
     }
     else
-    {
+    {   
         ROS_INFO("Affine matrix computed successfully");
+        // compute the number of inliers
+        int inlier_count = 0;
+        for(int i=0; i<inliers.rows; i++)
+        {
+            if(inliers.at<uchar>(i,0) == 1)
+            {
+                inlier_count++;
+            }
+        }
+        num_inliers = inlier_count;
         return affine_mat;
     }
 
@@ -180,9 +190,6 @@ cv::Mat MapMergingTool::draw_inlier_matches(const cv::Mat& image1, const vector<
     
     // Draw the inlier matches
     cv::drawMatches(image1, keypoints1, image2, keypoints2, inlier_matches, output, cv::Scalar(0,0,255) , cv::Scalar(0,255,0));
-    // Print the number of inliers
-    int inlier_matches_size = inlier_matches.size();
-    cout << "Number of inlier matches: " << inlier_matches_size << endl;
     return output;
 
 }

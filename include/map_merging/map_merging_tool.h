@@ -38,7 +38,7 @@ class MapMergingTool
                              const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches);
 
         cv::Mat compute_affine_matrix(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2, 
-                                        const std::vector<cv::DMatch>& matches, cv::Mat& inliers);
+                                        const std::vector<cv::DMatch>& matches, cv::Mat& inliers, int& num_inliers);
         cv::Mat draw_inlier_matches(const cv::Mat& image1, const std::vector<cv::KeyPoint>& keypoints1, const cv::Mat& image2,
                                     const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches, const cv::Mat& inliers);
         cv::Mat merge_maps(const cv::Mat& reference_map, const cv::Mat& align_map, const cv::Mat& affine_align_to_ref, 

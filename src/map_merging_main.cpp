@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     }
 
     // Create a MapMerger object
-    MapMerger map_merger(detector, matcher, 0.7);
+    MapMerger map_merger(detector, matcher, ratio_thr);
 
     // 1. Load maps from the specified folder
     map_merger.load_maps(maps_folder_path, ref_map_name);

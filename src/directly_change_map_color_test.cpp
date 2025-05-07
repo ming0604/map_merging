@@ -71,13 +71,15 @@ int main(int argc, char** argv)
     string map2Path; 
     string save_dir;
     string feature_type;
+    string matcher_type;
     string map1_file_name;
     string map2_file_name;
     bool use_stitching_module;
-    nh.param<std::string>("map1_image_path", map1Path, "/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20241218_vive_mapping_test3.pgm");
-    nh.param<std::string>("map2_image_path", map2Path, "/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20250216_vive_mapping_20m_test3.pgm");
-    nh.param<std::string>("output_folder_path", save_dir, "/home/mingzhun/Pictures/map_merging_output_image/");
-    nh.param<std::string>("feature_type", feature_type, "AKAZE");
+    nh.param<string>("map1_image_path", map1Path, "/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20241218_vive_mapping_test3.pgm");
+    nh.param<string>("map2_image_path", map2Path, "/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20250216_vive_mapping_20m_test3.pgm");
+    nh.param<string>("output_folder_path", save_dir, "/home/mingzhun/Pictures/map_merging_output_image/");
+    nh.param<string>("feature_type", feature_type, "AKAZE");
+    nh.param<string>("matcher_type", matcher_type, "BF");
     nh.param("use_stitching_module", use_stitching_module, false);
 
 
@@ -218,46 +220,88 @@ int main(int argc, char** argv)
         cv::Ptr<cv::DescriptorMatcher> matcher;
         if(feature_type == "SIFT")
         {   
-            // For SIFT use NORM_L2 
+            // Create SIFT detector
             detector = cv::SIFT::create();
-            //matcher = cv::BFMatcher::create(cv::NORM_L2, true); // crossCheck enabled
-            matcher = cv::BFMatcher::create(cv::NORM_L2, false); // crossCheck disabled
+            // Create matcher
+            if(matcher_type == "BF")
+            {   
+                // For SIFT use NORM_L2 
+                //matcher = cv::BFMatcher::create(cv::NORM_L2, true); // crossCheck enabled
+                matcher = cv::BFMatcher::create(cv::NORM_L2, false); // crossCheck disabled
+                ROS_INFO("Using BF matcher with NORM_L2");
+            }
+            else if(matcher_type == "FLANN")
+            {
+                // FLANN based matcher
+                matcher = cv::FlannBasedMatcher::create();
+                ROS_INFO("Using FLANN-based matcher");
+            }
+            else
+            {
+                ROS_ERROR("Error: Invalid matcher type. Please choose from BF or FLANN.");
+                return -1;
+            }
+                
         }
         else if(feature_type == "AKAZE")
         {   
-            // For AKAZE or ORB,use NORM_HAMMING:
+            // Create AKAZE detector
             detector = cv::AKAZE::create();
-            //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
-            matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
-
-            /*
-            //FLANN based matcher
-            cv::Ptr<cv::flann::IndexParams> indexParams = cv::makePtr<cv::flann::KDTreeIndexParams>();
-            cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>();
-            indexParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
-            searchParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
-            matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
-            */
+            // Create matcher
+            if(matcher_type == "BF")
+            {   
+                // For AKAZE or ORB,use NORM_HAMMING:
+                //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
+                matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
+                ROS_INFO("Using BF matcher with NORM_HAMMING");
+            }
+            else if(matcher_type == "FLANN")
+            {
+                // FLANN based matcher
+                cv::Ptr<cv::flann::IndexParams> indexParams = cv::makePtr<cv::flann::KDTreeIndexParams>();
+                cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>();
+                indexParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+                searchParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+                matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
+                ROS_INFO("Using FLANN-based matcher");
+            }
+            else
+            {
+                ROS_ERROR("Error: Invalid matcher type. Please choose from BF or FLANN.");
+                return -1;
+            }
         }
         else if(feature_type == "ORB")
         {   
-            // For AKAZE or ORB,use NORM_HAMMING:
+            // Create ORB detector
             detector = cv::ORB::create(5000);
-            //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
-            matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
-
-            /*
-            //FLANN based matcher
-            cv::Ptr<cv::flann::IndexParams> indexParams = cv::makePtr<cv::flann::KDTreeIndexParams>();
-            cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>();
-            indexParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
-            searchParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
-            matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
-            */
+            // Create matcher
+            if(matcher_type == "BF")
+            {   
+                // For AKAZE or ORB,use NORM_HAMMING:
+                //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
+                matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
+                ROS_INFO("Using BF matcher with NORM_HAMMING");
+            }
+            else if(matcher_type == "FLANN")
+            {
+                //FLANN based matcher
+                cv::Ptr<cv::flann::IndexParams> indexParams = cv::makePtr<cv::flann::KDTreeIndexParams>();
+                cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>();
+                indexParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+                searchParams->setAlgorithm(cvflann::FLANN_INDEX_LSH);
+                matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
+                ROS_INFO("Using FLANN-based matcher");
+            }
+            else
+            {
+                ROS_ERROR("Error: Invalid matcher type. Please choose from BF or FLANN.");
+                return -1;
+            }
         }
         else
         {
-            cerr << "Error: Invalid feature type. Please choose from SIFT, AKAZE, or ORB." << endl;
+            ROS_ERROR("Error: Invalid feature type. Please choose from SIFT, AKAZE, or ORB.");
             return -1;
         }
         // Print the feature type
@@ -284,15 +328,15 @@ int main(int argc, char** argv)
         cv::imshow("Map1 Features", map1_with_features);
         cv::imshow("Map2 Features", map2_with_features);
 
-        /*
+        /**/
         // Save the images with features
 
-        string map1_with_features_path = save_dir + map1_file_name + "_" + feature_type + "_features.png";
-        string map2_with_features_path = save_dir + map2_file_name + "_" + feature_type + "_features.png";
+        string map1_with_features_path = save_dir + map1_file_name + "_" + feature_type + "_features_test.png";
+        string map2_with_features_path = save_dir + map2_file_name + "_" + feature_type + "_features_test.png";
         cv::imwrite(map1_with_features_path, map1_with_features);
         cv::imwrite(map2_with_features_path, map2_with_features);
         cout << "Saved images with features to " << save_dir << endl;
-        */
+        
         
         // Perform feature matching
         vector<cv::DMatch> matches;

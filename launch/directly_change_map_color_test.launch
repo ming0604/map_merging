@@ -5,6 +5,7 @@
         <param name="map2_image_path" value="/home/mingzhun/lab_localization/src/navigation/amcl/amcl_data/maps/20250216_vive_mapping_20m_test3.pgm" />
         <param name="output_folder_path" value="/home/mingzhun/Pictures/map_merging_output_image/" />
         <param name="feature_type" value="ORB" />
+        <param name="matcher_type" value="BF"/>
         <param name="use_stitching_module" value="false" />
     </node>
 

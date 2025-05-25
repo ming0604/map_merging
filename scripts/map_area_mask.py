@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import rospy
 import cv2
 import numpy as np
 import os
@@ -42,6 +43,8 @@ def generate_masked_map(map_raw_img, map_yaml_path, output_map_img_path, output_
                 f.write(line)
     print(f"Masked map yaml file is saved to {output_map_yaml_path}")
 
+    return masked_map
+
 def draw_rectangles(event, x, y, flags, param):
     global rectangles, map_rect_area_img, rect_start, drawing
     # Left mouse button down to start drawing a rectangle area
@@ -55,30 +58,37 @@ def draw_rectangles(event, x, y, flags, param):
         temp_img = map_rect_area_img.copy()
         # Draw the rectangle you are currently selecting
         cv2.rectangle(temp_img, rect_start, (x, y), (0, 0, 255), 2)
-        cv2.imshow("Map", temp_img)
+        cv2.imshow("Map for masking area selection", temp_img)
     # Left mouse button up to finish drawing this rectangle area
     elif event == cv2.EVENT_LBUTTONUP:
         # Set the drawing flag to False
         drawing = False
         # Store the rectangle into the list of rectangles
         x_start, y_start = rect_start
-        # Ensure the rectangle coordinates are in the correct order
+        # Find the minimum and maximum coordinates of the rectangle
         x_min = min(x_start, x)
         x_max = max(x_start, x)
         y_min = min(y_start, y) 
         y_max = max(y_start, y)
+
+        # Ensure the rectangle coordinates are within the image bounds
+        h, w = map_rect_area_img.shape[:2]
+        x_min = max(0, x_min)
+        x_max = min(w - 1, x_max)
+        y_min = max(0, y_min)
+        y_max = min(h - 1, y_max)
         rectangles.append(((x_min, y_min), (x_max, y_max)))
         # Print the added rectangle coordinates
         print(f"Added selected area: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
         # Draw the rectangle on the map image
         # Update the  map rect area image with the new rectangle
         cv2.rectangle(map_rect_area_img, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
-        cv2.imshow("Map", map_rect_area_img)
+        cv2.imshow("Map for masking area selection", map_rect_area_img)
 def main():
     global rectangles, map_rect_area_img
-  
-    map_folder_path = "/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/"
-    map_name = "20241218_vive_mapping_test3"
+    rospy.init_node("map_area_mask", anonymous=True)
+    map_folder_path = rospy.get_param("~map_folder_path", "/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/")
+    map_name = rospy.get_param("~map_name", "original_map")
     map_img_path = map_folder_path + map_name + ".pgm"
     map_yaml_path = map_folder_path + map_name + ".yaml"
     output_map_img_name = map_name + "_masked.pgm"
@@ -91,26 +101,35 @@ def main():
     print(f"Loaded map image from {map_img_path}")
     print(f"Size of the raw map: h:{map_raw_img.shape[0]}, w:{map_raw_img.shape[1]}")
     map_rect_area_img = map_raw_img.copy()
+    # Convert the map_rect_area_img to BGR for displaying the selected rectangles in color
+    map_rect_area_img = cv2.cvtColor(map_rect_area_img, cv2.COLOR_GRAY2BGR)
     
     # Create a window to display the map
-    cv2.namedWindow("Map", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("Map for masking area selection", cv2.WINDOW_NORMAL)
     # Set mouse callback function to handle rectangle area marking
-    cv2.setMouseCallback("Map", draw_rectangles,)
+    cv2.setMouseCallback("Map for masking area selection", draw_rectangles,)
     # Display the map image
-    cv2.imshow("Map", map_rect_area_img)
+    cv2.imshow("Map for masking area selection", map_rect_area_img)
     print("Click and drag to select rectangle areas you want to mask.")
-    print("Press 'q' to quit and save the masked map.")
+    print("Press 's' to save the masked map.")
 
     while True:
         # Wait for a key press
         key = cv2.waitKey(1) & 0xFF
         # If 'q' is pressed, exit the loop
-        if key == ord('q'):
-            generate_masked_map(map_raw_img, map_yaml_path, output_map_img_path, output_map_yaml_path)
+        if key == ord('s'):
+            cv2.destroyWindow("Map for masking area selection")
+            # Generate the masked map image and save it
+            masked_map_img = generate_masked_map(map_raw_img, map_yaml_path, output_map_img_path, output_map_yaml_path)
+            # Display the final masked map image
+            cv2.namedWindow("Masked Map", cv2.WINDOW_NORMAL)
+            cv2.imshow("Masked Map", masked_map_img)
+            # Wait user to press any key to quit
+            print("Masked map image is displayed, press any key to quit.")
+            cv2.waitKey(0)
             break
 
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()

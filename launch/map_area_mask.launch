@@ -1,0 +1,9 @@
+<launch>
+    
+    <node pkg="map_merging" type="map_area_mask.py" name="map_area_mask" output="screen">
+        <!-- set the map that you want to set some area as unknown space -->
+        <param name="map_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/" />
+        <param name="map_name" value="20241218_vive_mapping_test3" />
+    </node>
+
+</launch>

@@ -1,22 +1,64 @@
 <launch>
     <!-- folder path need / at the end -->
     <node pkg="map_merging" type="map_merging" name="map_merging" output="screen">
-        <param name="feature_type" value="AKAZE"/>
-        <param name="matcher_type" value="BF"/>
+        <param name="feature_type" value="ORB"/> <!-- SIFT, ORB, AKAZE -->
+        <param name="matcher_type" value="BF"/>  <!-- BF, FLANN -->
+        <param name="ratio_test_threshold" value="0.8"/>  <!-- 0~1 , the smaller the more strict -->
+        <!--
         <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging_test/"/>
         <param name="reference_map_name" value="20241218_vive_mapping_test3"/>
         <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20241218_vive_mapping_test3_and_20250216_vive_mapping_20m_test3_merging_tuning/"/>
-        <param name="merged_map_name" value="map_info_test"/>
-        <param name="ratio_test_threshold" value="0.7"/>
-        <!--free space: black(0), occupied space: dark gray(100), unknown space: white(255), like the method of directly using map topic--> 
+        <param name="merged_map_name" value="tuning_test"/>-->
+        <!--
+        <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20241218_vive_mapping_test3_area_masking_and_20250216_vive_mapping_20m_test3_merging/"/>
+        <param name="reference_map_name" value="20241218_vive_mapping_test3_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20241218_vive_mapping_test3_area_masking_and_20250216_vive_mapping_20m_test3_merging/"/>
+        <param name="merged_map_name" value="local_map1_masking_test_f255_occ0_un127_AKAZE_BF"/>
+        -->
+        <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20250920_vive_local1_map3_masked_and_20250920_vive_local2_map4_masked_merging/"/>
+        <param name="reference_map_name" value="20250920_vive_local1_map3_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20250920_vive_local1_map3_masked_and_20250920_vive_local2_map4_masked_merging/"/>
+        <param name="merged_map_name" value="20250920_area_masked_maps_merging_f255_occ0_un127_AKAZE_BF_r05"/> -->
+
+        <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20250920_vive_local1_map3_masked_and_20251004_vive_local2_map2_masked_merging/"/>
+        <param name="reference_map_name" value="20250920_vive_local1_map3_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20250920_vive_local1_map3_masked_and_20251004_vive_local2_map2_masked_merging/"/>
+        <param name="merged_map_name" value="20250920_local1_and_20251004_local2_area_masked_maps_merging_f255_occ0_un127_AKAZE_BF_r08"/> -->
+
+        <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map5_masked_merging/"/>
+        <param name="reference_map_name" value="20260327_vive_local1_map6_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map5_masked_merging/"/>
+        <param name="merged_map_name" value="20260327_vive_local1_map6_and_20260328_vive_local2_map5_area_masked_maps_merging_f255_occ0_un127_ORB_BF_r08"/> -->
+
+        <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
+        <param name="reference_map_name" value="20260327_vive_local1_map6_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
+        <param name="merged_map_name" value="20260327_vive_local1_map6_and_20260328_vive_local2_map3_area_masked_maps_merging_f255_occ0_un127_ORB_BF_r08"/>
+
+        <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_merging/"/>
+        <param name="reference_map_name" value="20260327_vive_local1_map6_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_merging/"/>
+        <param name="merged_map_name" value="20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_merging_f255_occ0_un127_AKAZE_BF_r06"/> -->
+
+        <!--free space: black(0), occupied space: dark gray(100), unknown space: white(255), like the method of directly using map topic
         <param name="free_color_expected" value="0"/>
         <param name="occ_color_expected" value="100"/>
-        <param name="unknown_color_expected" value="255"/>
+        <param name="unknown_color_expected" value="255"/>--> 
         <!--
         <param name="free_color_expected" value="255"/>
         <param name="occ_color_expected" value="0"/>
-        <param name="unknown_color_expected" value="127"/>
+        <param name="unknown_color_expected" value="100"/>
         -->
+        <!--  -->
+        <param name="free_color_expected" value="255"/>
+        <param name="occ_color_expected" value="0"/>
+        <param name="unknown_color_expected" value="127"/> 
+        <!--original color: free space: white(254), occupied space: black(0), unknown space: gray(205)
+        <param name="free_color_expected" value="254"/>
+        <param name="occ_color_expected" value="0"/>
+        <param name="unknown_color_expected" value="205"/> -->
+            
+            
     </node>
 
 </launch>

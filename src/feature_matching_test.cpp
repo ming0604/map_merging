@@ -72,7 +72,7 @@ int main(int argc, char** argv)
     else if(feature_type == "ORB")
     {   
         // For AKAZE or ORB,use NORM_HAMMING:
-        detector = cv::ORB::create(3000);
+        detector = cv::ORB::create(5000);
         //matcher = cv::BFMatcher::create(cv::NORM_HAMMING, true); // crossCheck enabled
         matcher = cv::BFMatcher::create(cv::NORM_HAMMING, false); // crossCheck disabled
     }

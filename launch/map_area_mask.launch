@@ -18,11 +18,14 @@
         <!-- <param name="map_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/" />
         <param name="map_name" value="20251004_vive_local2_map2" /> -->
         
-        <param name="map_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/" />
-        <param name="map_name" value="20260327_vive_local1_map6" /> 
+        <!-- <param name="map_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/" />
+        <param name="map_name" value="20260327_vive_local1_map6" />  -->
 
         <!-- <param name="map_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/" />
         <param name="map_name" value="20260328_vive_local2_map3" /> -->
+
+        <param name="map_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/area_mask_maps/" />
+        <param name="map_name" value="20260327_vive_local1_map6_for_paper_example" /> 
 
     </node>
 

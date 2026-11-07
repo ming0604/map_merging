@@ -35,6 +35,16 @@
         <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
         <param name="merged_map_name" value="20260327_vive_local1_map6_and_20260328_vive_local2_map3_area_masked_maps_merging_f255_occ0_un127_ORB_BF_r08"/>
 
+        <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
+        <param name="reference_map_name" value="20260327_vive_local1_map6_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
+        <param name="merged_map_name" value="20260327_vive_local1_map6_and_20260328_vive_local2_map3_area_masked_maps_merging_f255_occ0_un127_AKAZE_BF_r09"/> -->
+        
+        <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
+        <param name="reference_map_name" value="20260327_vive_local1_map6_masked"/>
+        <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_masked_merging/"/>
+        <param name="merged_map_name" value="20260327_vive_local1_map6_and_20260328_vive_local2_map3_area_masked_maps_merging_f255_occ0_un127_SIFT_BF_r08"/> -->
+
         <!-- <param name="maps_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/maps/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_merging/"/>
         <param name="reference_map_name" value="20260327_vive_local1_map6_masked"/>
         <param name="output_folder_path" value="/home/mingzhun/lab_localization/src/map_merging/merging_result/20260327_vive_local1_map6_masked_and_20260328_vive_local2_map3_merging/"/>
